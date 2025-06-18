@@ -1,0 +1,49 @@
+version: '3.8'
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo_container
+    networks:
+      - deploy-network
+    volumes:
+      - mongo-data:/data/db
+
+  backend:
+    build: ./backend
+    container_name: backend_container
+    depends_on:
+      - mongo
+    environment:
+      - URI_MONGO=mongodb://mongo:27017/kinalCast
+    ports:
+      - "3001:3001"
+    networks:
+      - deploy-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  client:
+    build: ./client
+    container_name: client_container
+    ports:
+      - "4173:4173"
+    networks:
+      - deploy-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4173"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  deploy-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local
